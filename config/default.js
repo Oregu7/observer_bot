@@ -1,6 +1,7 @@
 // загружаем переменные окружения
 require("dotenv").config();
 // загружаем компоненты
+const path = require("path");
 const mongo = require("./components/mongo");
 const base = require("./components/base.json");
 // необходимые переменные окружения
@@ -28,6 +29,7 @@ const config = {
     },
     bot: {
         token: process.env.BOT_TOKEN,
+        localesPath: path.resolve(__dirname, "locales"),
     },
     base,
 };

@@ -1,0 +1,4 @@
+base:
+  startCommandMessage: Hi, I'm a test bot !
+  incorrectURLMessage: Вы отправили некорректную ссылку !
+  incorrectPostMessage: Похоже вы отправили пост из закрытого канала!

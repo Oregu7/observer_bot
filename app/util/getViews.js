@@ -14,6 +14,8 @@ async function getViews(channel, post) {
         .find("span.tgme_widget_message_meta > a > time")
         .attr("datetime");
 
+    if (!views) return { error: "incorrect link" };
+
     const hoursLater = getDifferenceInHours(date);
     const viewsNum = parseViews(views);
     return {
@@ -21,6 +23,7 @@ async function getViews(channel, post) {
         viewsNum,
         date,
         hoursLater,
+        error: null,
     };
 }
 

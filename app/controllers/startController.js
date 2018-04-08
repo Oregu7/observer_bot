@@ -1,3 +1,4 @@
+const Markup = require("telegraf/markup");
 const { UserModel } = require("../models");
 
 
@@ -11,5 +12,10 @@ module.exports = async(ctx) => {
         ctx.session.authToken = user._id;
     }
 
-    return ctx.reply("Hi, I'm a test bot");
+    const keyboard = Markup.keyboard([
+        Markup.button("Посчитать просмотры"),
+        Markup.button("FAQ"),
+    ], { columns: 2 }).resize(true);
+
+    return ctx.reply(ctx.i18n.t("base.startCommandMessage"), keyboard.extra());
 };

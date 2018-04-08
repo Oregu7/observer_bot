@@ -1,7 +1,9 @@
 const startController = require("./startController");
-const registerPostController = require("./registerPostController");
+const messageController = require("./messageController");
+const { byURL: registerByURL } = require("./registerPostController");
 
 module.exports = {
     startController,
-    registerPostController,
+    registerByURL,
+    messageController,
 };
