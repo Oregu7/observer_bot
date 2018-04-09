@@ -18,7 +18,11 @@ bot.use(localSession.middleware());
 bot.use(i18n.middleware());
 // commands
 bot.start(controllers.startController);
+bot.command("faq", controllers.faqController);
+bot.command("views", controllers.countViewsController);
 // patterns
+bot.hears(/^\u{1F4C8}Посчитать просмотры$/ui, controllers.countViewsController);
+bot.hears(/^\u{2139}FAQ$/ui, controllers.faqController);
 bot.hears(/(https?:\/\/)?(www\.)?t\.me\/(\S+)\/(\d+)\??.*/, controllers.registerByURL);
 // events
 bot.on("message", controllers.messageController);

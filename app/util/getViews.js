@@ -1,8 +1,8 @@
 const rp = require("request-promise");
 const cheerio = require("cheerio");
 
-async function getViews(channel, post) {
-    const url = `https://t.me/${channel}/${post}?embed=1`;
+async function getViews(channel, messageId) {
+    const url = `https://t.me/${channel}/${messageId}?embed=1`;
     const data = await rp.get(url);
     const $ = cheerio.load(data);
 
@@ -16,26 +16,14 @@ async function getViews(channel, post) {
 
     if (!views) return { error: "incorrect link" };
 
-    const hoursLater = getDifferenceInHours(date);
-    const viewsNum = parseViews(views);
+    const viewsCount = parseViews(views);
     return {
         views,
-        viewsNum,
+        viewsCount,
         date,
-        hoursLater,
+        url,
         error: null,
     };
-}
-
-function getMilliseconds(data = null) {
-    const date = data ? new Date(data) : new Date;
-    return date.getTime();
-}
-
-function getDifferenceInHours(data) {
-    const date = getMilliseconds(data);
-    const date2 = getMilliseconds();
-    return (date2 - date) / (1000 * 60 * 60);
 }
 
 function parseViews(views) {

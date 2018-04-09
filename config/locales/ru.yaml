@@ -1,4 +1,9 @@
 base:
-  startCommandMessage: Hi, I'm a test bot !
+  startCommandMessage: <b>Observer Bot</b> - это бот, который собирает статистику просмотров за 24 часа, с момента публикации поста.
+  startWatchMessage: Начинаю сбор статистики по <a href="${url}">посту</a>\nДата окончания:<b> ${finishDate}</b>
+  existPostMessage: \u{26A0}Я уже <b>собираю</b> статистику по данному <a href="${url}">посту</a>\nДата окончания:<b> ${finishDate}</b>
+  watchErrorMessage: \u{26A0}Данный <a href="${url}">пост</a> больше не существует, похоже его <b>удалил</b> администратор канала!
   incorrectURLMessage: Вы отправили некорректную ссылку !
   incorrectPostMessage: Похоже вы отправили пост из закрытого канала!
+  theWatchLimitExceededMessage: \u{26A0}Данный пост опубликовали более 24х часов назад - [<b>${hoursLater}ч.</b>]!
+  feedbackMessage: ${"\u2796".repeat(7)}\nПо всем вопросам @botodojo_bot

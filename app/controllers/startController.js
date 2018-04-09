@@ -1,8 +1,8 @@
-const Markup = require("telegraf/markup");
 const { UserModel } = require("../models");
-
+const { getMainKeyboard } = require("../helpers");
 
 module.exports = async(ctx) => {
+    const { i18n } = ctx;
     const parts = ctx.message.text.split(" ");
     const route = parts[1] || "/";
 
@@ -12,10 +12,9 @@ module.exports = async(ctx) => {
         ctx.session.authToken = user._id;
     }
 
-    const keyboard = Markup.keyboard([
-        Markup.button("Посчитать просмотры"),
-        Markup.button("FAQ"),
-    ], { columns: 2 }).resize(true);
+    const info = i18n.t("base.startCommandMessage");
+    const feedback = i18n.t("base.feedbackMessage");
+    const keyboard = getMainKeyboard(ctx);
 
-    return ctx.reply(ctx.i18n.t("base.startCommandMessage"), keyboard.extra());
+    return ctx.replyWithHTML(`${info}\n\n${feedback}`, keyboard.extra());
 };
