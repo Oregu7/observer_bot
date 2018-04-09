@@ -22,7 +22,7 @@ async function registerPost(ctx, channel, messageId) {
         return ctx.replyWithHTML(i18n.t("base.existPostMessage", { finishDate, url: post.utl }));
 
     // запускаем вотчеры
-    const timerId = setInterval(watcher, watcherManager.minute * 10, ctx, post);
+    const timerId = setInterval(watcher, watcherManager.hour, ctx, post);
     const timeOutId = setTimeout(closeWatcher, watcherManager.getWatchTime(date), ctx, post);
     watcherManager.saveTimers(post, timerId, timeOutId);
 
