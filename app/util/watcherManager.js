@@ -1,4 +1,5 @@
 const moment = require("moment");
+const { telegram } = require("../bot");
 
 const minute = 1000 * 60;
 const hour = minute * 60;
@@ -55,7 +56,7 @@ function saveTimers(post, timerId, timeOutId) {
 }
 
 function getTimers(post) {
-    const { _id: postId } = post;
+    const { id: postId } = post;
     const { timerId, timeOutId } = timers[postId];
     delete timers[postId];
 
@@ -69,6 +70,46 @@ function stopWatchers(post) {
     return true;
 }
 
+async function watcherHandler(post) {
+    const { channel, messageId, id: postId } = post;
+    const { views, viewsCount, error } = await getViews(channel, messageId);
+    if (error) {
+        stopWatchers(post);
+        ctx.replyWithHTML(ctx.i18n.t("base.watchErrorMessage", { url: post.url }));
+        return sendStatisticsMessage(ctx, post);
+    }
+
+    let ok = await PostModel.update({ id: postId }, { $push: { statistics: { views, viewsCount } } });
+    console.log(`${channel}[${postId}] => ${views}`);
+
+    return ok;
+}
+
+async function closeWatcher(post) {
+    stopWatchers(post);
+    let ok = await watcher(ctx, post);
+    console.log(`${post.channel}[${post.id}] => finish`);
+    return sendStatisticsMessage(ctx, post);
+}
+
+async function sendStatisticsMessage(post) {
+    const { statistics } = await PostModel.findById(post.id);
+    let message = `--- Статистика <a href ="${post.url}">поста</a> ---\n`;
+    const [lastStat] = statistics.splice(-1);
+    statistics.forEach((el, indx) => {
+        message += `${indx + 1}) ${formatDate(ctx, el.date)} - ${el.views}\n`;
+    });
+    message += `[${formatDate(ctx, lastStat.date)}]\n\nИтого за 24 часа пост набрал <b>${lastStat.views}</b>`;
+
+    return ctx.replyWithHTML(message);
+}
+
+function startWatchers(post) {
+    const timerId = setInterval(watcherHandler, hour, post);
+    const timeOutId = setTimeout(closeWatcher, getWatchTime(post.date), post);
+    saveTimers(post, timerId, timeOutId);
+}
+
 module.exports = {
     hour,
     minute,
@@ -78,6 +119,7 @@ module.exports = {
     saveTimers,
     getTimers,
     stopWatchers,
+    startWatchers,
     getFinishDateInMilliseconds,
     getDifferenceInHours,
 };

@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const PostSchema = mongoose.Schema({
-    userId: { type: Number, required: true },
+    subscribers: [{ type: Number, required: true }],
     url: { type: String, required: true, index: true },
     channel: { type: String, required: true },
     messageId: { type: Number, required: true },
@@ -14,11 +14,25 @@ const PostSchema = mongoose.Schema({
     }],
 });
 
-PostSchema.statics.createAndCheckExist = async function(data, statistics) {
-    const exist = await this.findOne({ userId: data.userId, url: data.url }).select("url date");
-    if (exist) return { exist: true, url: exist.url, date: exist.date };
+PostSchema.statics.createOrSubscribe = async function(userId, data, statistics) {
+    const post = await this.findOne({ url: data.url }).select("url date subscribers");
+    if (post && post.subscribers.indexOf(userId) !== -1) {
+        return { exist: true, url: post.url, date: post.date };
+    }else if(post) {
+        post.subscribers.push(userId);
+        await post.save();
+        return { subscribe: true, url: post.url, date: post.date };
+    }
 
-    return await this.create(Object.assign({}, data, { statistics: [statistics] }));
+    const {
+        _id: id,
+        url,
+        date,
+        channel,
+        messageId,
+    } = await this.create(Object.assign({}, data, { statistics: [statistics], subscribers: [userId] }));
+
+    return { id, url, channel, messageId, date };
 };
 
 module.exports = mongoose.model("Post", PostSchema);
