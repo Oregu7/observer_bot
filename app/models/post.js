@@ -18,7 +18,7 @@ PostSchema.statics.createOrSubscribe = async function(userId, data, statistics) 
     const post = await this.findOne({ url: data.url }).select("url date subscribers");
     if (post && post.subscribers.indexOf(userId) !== -1) {
         return { exist: true, url: post.url, date: post.date };
-    }else if(post) {
+    } else if (post) {
         post.subscribers.push(userId);
         await post.save();
         return { subscribe: true, url: post.url, date: post.date };
@@ -33,6 +33,20 @@ PostSchema.statics.createOrSubscribe = async function(userId, data, statistics) 
     } = await this.create(Object.assign({}, data, { statistics: [statistics], subscribers: [userId] }));
 
     return { id, url, channel, messageId, date };
+};
+
+PostSchema.statics.updateStatistics = function(id, statistics) {
+    return this.update({ _id: id }, { $push: { statistics } });
+};
+
+PostSchema.statics.getSubscribersAndStat = function(id) {
+    return this.findById(id)
+        .select("subscribers statistics");
+};
+
+PostSchema.statics.closeActivity = async function(id) {
+    let ok = await this.update({ _id: id }, { $set: { active: false } });
+    return ok;
 };
 
 module.exports = mongoose.model("Post", PostSchema);

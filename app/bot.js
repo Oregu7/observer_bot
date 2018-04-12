@@ -1,17 +1,11 @@
 const config = require("config");
 const Telegraf = require("telegraf");
-const I18n = require("telegraf-i18n");
-const { localSession } = require("./util");
+const { localSession, i18n } = require("./util");
 const controllers = require("./controllers");
 
 //config
 const token = config.get("bot.token");
 const bot = new Telegraf(token);
-const i18n = new I18n({
-    directory: config.get("bot.localesPath"),
-    defaultLanguage: "ru",
-    useSession: true,
-});
 // Create scene manager
 // middlewares
 bot.use(localSession.middleware());
@@ -24,6 +18,11 @@ bot.command("views", controllers.countViewsController);
 bot.hears(/^\u{1F4C8}Посчитать просмотры$/ui, controllers.countViewsController);
 bot.hears(/^\u{2139}FAQ$/ui, controllers.faqController);
 bot.hears(/(https?:\/\/)?(www\.)?t\.me\/(\S+)\/(\d+)\??.*/, controllers.registerByURL);
+//actions
+bot.action(/xls:(\S+)/i, controllers.downloadAction.xlsx);
+bot.action(/csv:(\S+)/i, controllers.downloadAction.csv);
+bot.action(/xml:(\S+)/i, controllers.downloadAction.xml);
+bot.action(/json:(\S+)/i, controllers.downloadAction.json);
 // events
 bot.on("message", controllers.messageController);
 

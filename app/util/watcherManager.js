@@ -1,5 +1,14 @@
 const moment = require("moment");
-const { telegram } = require("../bot");
+const Telegraf = require("telegraf");
+const Extra = require("telegraf/extra");
+const Markup = require("telegraf/markup");
+const getViews = require("./getViews");
+const i18n = require("./i18n");
+const { PostModel } = require("../models");
+
+//config
+const token = require("config").get("bot.token");
+const bot = new Telegraf(token);
 
 const minute = 1000 * 60;
 const hour = minute * 60;
@@ -29,15 +38,14 @@ function getFinishDateInMilliseconds(date) {
     return currentDate + watchTime;
 }
 
-function getFinishDate(ctx, date) {
+function getFinishDate(date) {
     const finishDate = getFinishDateInMilliseconds(date);
-    return formatDate(ctx, finishDate);
+    return formatDate(finishDate);
 }
 
-function formatDate(ctx, date, format = "lll") {
-    const locale = ctx.i18n.locale();
+function formatDate(date, format = "lll") {
     return moment(date)
-        .locale(locale)
+        .locale("ru")
         .format(format);
 }
 
@@ -46,40 +54,43 @@ function getDifferenceInHours(date) {
     return difference / hour;
 }
 
-
 // timers
-
 function saveTimers(post, timerId, timeOutId) {
-    const { _id: postId } = post;
+    const { id: postId } = post;
     timers[postId] = { timerId, timeOutId };
     return true;
 }
 
-function getTimers(post) {
-    const { id: postId } = post;
-    const { timerId, timeOutId } = timers[postId];
-    delete timers[postId];
-
-    return { timerId, timeOutId };
-}
-
 function stopWatchers(post) {
-    const { timerId, timeOutId } = getTimers(post);
-    clearInterval(timerId);
-    clearTimeout(timeOutId);
+    try {
+        const { timerId, timeOutId } = timers[post.id];
+        clearInterval(timerId);
+        clearTimeout(timeOutId);
+        delete timers[post.id];
+    } catch (err) {
+        console.error(err);
+    }
+
     return true;
 }
 
 async function watcherHandler(post) {
-    const { channel, messageId, id: postId } = post;
+    const { channel, messageId, id: postId, url } = post;
     const { views, viewsCount, error } = await getViews(channel, messageId);
     if (error) {
         stopWatchers(post);
-        ctx.replyWithHTML(ctx.i18n.t("base.watchErrorMessage", { url: post.url }));
-        return sendStatisticsMessage(ctx, post);
+        const { subscribers, statistics } = await PostModel.getSubscribersAndStat(postId);
+        subscribers.forEach((subscriber) => {
+            let message = i18n.t("base.watchErrorMessage", { url });
+            bot.telegram.sendMessage(subscriber, message, Extra.HTML());
+        });
+
+        PostModel.closeActivity(postId);
+        sendStatisticsMessage(post, statistics, subscribers);
+        return { error: true };
     }
 
-    let ok = await PostModel.update({ id: postId }, { $push: { statistics: { views, viewsCount } } });
+    let ok = await PostModel.updateStatistics(postId, { views, viewsCount });
     console.log(`${channel}[${postId}] => ${views}`);
 
     return ok;
@@ -87,21 +98,33 @@ async function watcherHandler(post) {
 
 async function closeWatcher(post) {
     stopWatchers(post);
-    let ok = await watcher(ctx, post);
+    const ok = await watcherHandler(post);
+    if (ok.error) return null;
+
+    const { subscribers, statistics } = await PostModel.getSubscribersAndStat(post.id);
     console.log(`${post.channel}[${post.id}] => finish`);
-    return sendStatisticsMessage(ctx, post);
+
+    PostModel.closeActivity(post.id);
+    return sendStatisticsMessage(post, statistics, subscribers);
 }
 
-async function sendStatisticsMessage(post) {
-    const { statistics } = await PostModel.findById(post.id);
+function sendStatisticsMessage(post, statistics, subscribers) {
     let message = `--- Статистика <a href ="${post.url}">поста</a> ---\n`;
     const [lastStat] = statistics.splice(-1);
     statistics.forEach((el, indx) => {
-        message += `${indx + 1}) ${formatDate(ctx, el.date)} - ${el.views}\n`;
+        message += `${indx + 1}) ${formatDate(el.date)} - ${el.views}\n`;
     });
-    message += `[${formatDate(ctx, lastStat.date)}]\n\nИтого за 24 часа пост набрал <b>${lastStat.views}</b>`;
+    message += `[${formatDate(lastStat.date)}]\n\nИтого за 24 часа пост набрал <b>${lastStat.views}</b>`;
+    const keyboard = Markup.inlineKeyboard([
+        Markup.callbackButton(".csv", `csv:${post.id}`),
+        Markup.callbackButton(".xls", `xls:${post.id}`),
+        Markup.callbackButton(".xml", `xml:${post.id}`),
+        Markup.callbackButton(".json", `json:${post.id}`),
+    ], { columns: 4 });
 
-    return ctx.replyWithHTML(message);
+    return subscribers.forEach((subscriber) => {
+        bot.telegram.sendMessage(subscriber, message, Extra.HTML().markup(keyboard));
+    });
 }
 
 function startWatchers(post) {
@@ -110,14 +133,23 @@ function startWatchers(post) {
     saveTimers(post, timerId, timeOutId);
 }
 
+async function run() {
+    const postList = await PostModel.find({ active: true })
+        .select("url date channel messageId");
+
+    for (let post of postList) {
+        startWatchers(post);
+    }
+}
+
 module.exports = {
+    run,
     hour,
     minute,
     getWatchTime,
     getFinishDate,
     formatDate,
     saveTimers,
-    getTimers,
     stopWatchers,
     startWatchers,
     getFinishDateInMilliseconds,

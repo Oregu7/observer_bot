@@ -6,7 +6,10 @@ const env = config.get("env");
 const port = config.get("server.port");
 const token = config.get("bot.token");
 const bot = require("./app/bot");
+const { watcherManager } = require("./app/util");
+
 //start bot
+watcherManager.run();
 if (env === "development") {
     bot.telegram.setWebhook();
     bot.startPolling();
