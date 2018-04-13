@@ -34,7 +34,7 @@ function tmpFile(ctx, prefix, postfix, callback) {
 exports.csv = getPostMiddleware((ctx, post) => {
     tmpFile(ctx, "views-", ".csv", (path, fd, cleanup) => {
         csv
-            .writeToPath(path, post.statistics, { headers: true })
+            .writeToPath(path, post.statistics.toObject(), { headers: true })
             .on("finish", async(error) => {
                 await ctx.replyWithDocument({ source: path });
                 cleanup();
