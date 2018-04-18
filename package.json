@@ -2,10 +2,10 @@
     "name": "observer_bot",
     "version": "0.3.47",
     "description": "",
-    "main": "index.js",
+    "main": "main.js",
     "scripts": {
-        "start": "pm2 start ./index.js --name observer_bot",
-        "dev": "nodemon ./index.js --ignore session_db.json"
+        "start": "pm2 start ./main.js --name observer_bot",
+        "dev": "nodemon ./main.js --ignore session_db.json"
     },
     "author": "baamz",
     "license": "ISC",
