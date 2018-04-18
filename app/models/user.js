@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { getUserInfo } = require("../util");
 
 const UserSchema = mongoose.Schema({
     userId: { type: Number, required: true, unique: true },
@@ -11,8 +10,7 @@ const UserSchema = mongoose.Schema({
     created_at: { type: Date, default: Date.now },
 });
 
-UserSchema.statics.createByContext = async function(ctx) {
-    const userData = getUserInfo(ctx);
+UserSchema.statics.registerUser = async function(userData) {
     const user = await this.findOne({ userId: userData.userId });
     if (user) return user;
 

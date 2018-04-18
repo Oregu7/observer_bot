@@ -1,5 +1,6 @@
 const { UserModel } = require("../models");
 const { getMainKeyboard } = require("../helpers");
+const { getUserInfo } = require("../util");
 
 module.exports = async(ctx) => {
     const { i18n } = ctx;
@@ -7,7 +8,7 @@ module.exports = async(ctx) => {
     const route = parts[1] || "/";
 
     if (!ctx.session.hasOwnProperty("authToken")) {
-        let user = await UserModel.createByContext(ctx);
+        let user = await UserModel.registerUser(getUserInfo(ctx));
         console.log(`[ new client ] => ${user.username}:${user.userId}`);
         ctx.session.authToken = user._id;
     }
